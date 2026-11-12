@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Hindi Cards" />
+  <title>हिंदी वर्णमाला — Hindi Flashcards</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Devanagari:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-top: #ffecd2;
+      --bg-bottom: #fcb69f;
+      --card-bg: #ffffff;
+      --primary: #ff6b6b;
+      --secondary: #4ecdc4;
+      --accent: #ffe66d;
+      --purple: #7c5dfa;
+      --text-dark: #2d3436;
+      --text-muted: #636e72;
+      --shadow: 0 14px 30px rgba(45, 52, 54, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(160deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+      color: var(--text-dark);
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100dvh;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: calc(env(safe-area-inset-top, 12px) + 10px) 16px calc(env(safe-area-inset-bottom, 12px) + 14px);
+    }
+
+    /* Header & Score */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .title-badge {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--purple);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stars-badge {
+      background: #fff9db;
+      border: 2px solid #ffd43b;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #e67700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .stars-badge.bump {
+      transform: scale(1.2);
+    }
+
+    /* Controls Bar */
+    .controls-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .segmented-row {
+      display: flex;
+      background: rgba(255, 255, 255, 0.65);
+      padding: 4px;
+      border-radius: 16px;
+      gap: 4px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+    }
+
+    .seg-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 9px 6px;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .seg-btn.active {
+      background: #ffffff;
+      color: var(--text-dark);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+
+    .seg-btn.active.mode-random { color: #e8590c; }
+    .seg-btn.active.mode-seq { color: #0ca678; }
+
+    /* Main Card Area */
+    .card-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin: 10px 0;
+      min-height: 0;
+    }
+
+    .flashcard {
+      width: 100%;
+      height: 100%;
+      max-height: 410px;
+      background: var(--card-bg);
+      border-radius: 34px;
+      box-shadow: var(--shadow);
+      border: 5px solid #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px 22px;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+      touch-action: manipulation;
+    }
+
+    .flashcard:active {
+      transform: scale(0.96);
+    }
+
+    .flashcard.pop-in {
+      animation: cardPop 0.34s cubic-bezier(0.22, 1.25, 0.36, 1);
+    }
+
+    @keyframes cardPop {
+      0% { transform: scale(0.84) rotate(-2deg); opacity: 0.5; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .card-top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .type-pill {
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: #f1f3f5;
+      color: var(--text-muted);
+    }
+
+    .type-pill.vowel {
+      background: #fff0f6;
+      color: #d6336c;
+    }
+
+    .type-pill.consonant {
+      background: #e7f5ff;
+      color: #1971c2;
+    }
+
+    .speak-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: none;
+      background: #eef2ff;
+      color: var(--purple);
+      font-size: 1.35rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(124, 93, 250, 0.18);
+      transition: transform 0.15s ease;
+    }
+
+    .speak-btn:active {
+      transform: scale(0.88);
+    }
+
+    .hindi-letter {
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      font-size: clamp(6.8rem, 26vw, 9.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin: 4px 0;
+      text-shadow: 0 6px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .hint-box {
+      text-align: center;
+      background: #f8f9fa;
+      border-radius: 20px;
+      padding: 10px 18px;
+      width: 100%;
+      transition: opacity 0.2s ease;
+    }
+
+    .hint-box.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .phonetic {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .example-word {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .tap-prompt {
+      font-size: 0.85rem;
+      color: #adb5bd;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    /* Bottom Navigation */
+    .bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .nav-btn {
+      border: none;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+      transition: transform 0.15s ease;
+    }
+
+    .nav-btn:active {
+      transform: scale(0.94);
+    }
+
+    .btn-prev {
+      background: #ffffff;
+      color: var(--text-dark);
+      flex: 1;
+    }
+
+    .btn-quiz {
+      background: #ffffff;
+      color: var(--purple);
+      flex: 1.1;
+    }
+
+    .btn-quiz.active {
+      background: var(--purple);
+      color: #ffffff;
+    }
+
+    .btn-next {
+      background: var(--secondary);
+      color: #ffffff;
+      flex: 1.3;
+    }
+
+    /* Confetti particles */
+    .particle {
+      position: fixed;
+      pointer-events: none;
+      font-size: 1.5rem;
+      z-index: 999;
+      animation: flyOut 0.85s ease-out forwards;
+    }
+
+    @keyframes flyOut {
+      0% { transform: translate(0, 0) scale(0.6); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(var(--rot)); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Top Header -->
+    <div class="header">
+      <div class="title-badge">🎨 हिंदी वर्णमाला</div>
+      <div class="stars-badge" id="starsBadge">⭐ <span id="starCount">0</span></div>
+    </div>
+
+    <!-- Mode & Filter Controls -->
+    <div class="controls-group">
+      <div class="segmented-row">
+        <button class="seg-btn mode-random active" id="btnRandom" onclick="setMode('random')">🎲 Random</button>
+        <button class="seg-btn mode-seq" id="btnSequence" onclick="setMode('sequence')">🔢 Sequence (<span id="seqCounter">1/49</span>)</button>
+      </div>
+      <div class="segmented-row">
+        <button class="seg-btn active" id="filterAll" onclick="setCategory('all')">All (49)</button>
+        <button class="seg-btn" id="filterVowel" onclick="setCategory('vowel')">स्वर Vowels</button>
+        <button class="seg-btn" id="filterConsonant" onclick="setCategory('consonant')">व्यंजन Consonants</button>
+      </div>
+    </div>
+
+    <!-- Flashcard -->
+    <div class="card-stage">
+      <div class="flashcard" id="flashcard" onclick="handleCardTap()">
+        <div class="card-top-bar">
+          <span class="type-pill vowel" id="typePill">स्वर • Vowel</span>
+          <button class="speak-btn" id="speakBtn" onclick="speakCurrent(event)" aria-label="Listen">🔊</button>
+        </div>
+
+        <div class="hindi-letter" id="hindiLetter" style="color: #ff6b6b;">अ</div>
+
+        <div class="hint-box" id="hintBox">
+          <div class="phonetic" id="phoneticText">a (as in America)</div>
+          <div class="example-word" id="exampleText">अनार (Anaar) — Pomegranate 🍎</div>
+        </div>
+
+        <div class="tap-prompt">Tap card for next letter 👆</div>
+      </div>
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="bottom-bar">
+      <button class="nav-btn btn-prev" onclick="prevLetter()">⬅️ Back</button>
+      <button class="nav-btn btn-quiz" id="quizBtn" onclick="toggleQuiz()">🙈 Hide Hint</button>
+      <button class="nav-btn btn-next" onclick="nextLetter()">Next ➡️</button>
+    </div>
+  </div>
+
+  <script>
+    const LETTERS = [
+      // Vowels (स्वर) - 13
+      { char: 'अ', type: 'vowel', phonetic: 'a (short "u" in up)', word: 'अनार (Anaar) — Pomegranate 🍎' },
+      { char: 'आ', type: 'vowel', phonetic: 'aa (as in father)', word: 'आम (Aam) — Mango 🥭' },
+      { char: 'इ', type: 'vowel', phonetic: 'i (as in sit)', word: 'इमली (Imli) — Tamarind 🌿' },
+      { char: 'ई', type: 'vowel', phonetic: 'ee (as in feet)', word: 'ईख (Eekh) — Sugarcane 🎋' },
+      { char: 'उ', type: 'vowel', phonetic: 'u (as in put)', word: 'उल्लू (Ulloo) — Owl 🦉' },
+      { char: 'ऊ', type: 'vowel', phonetic: 'oo (as in boot)', word: 'ऊन (Oon) — Wool 🧶' },
+      { char: 'ऋ', type: 'vowel', phonetic: 'ri (as in rip)', word: 'ऋषि (Rishi) — Sage 🧘' },
+      { char: 'ए', type: 'vowel', phonetic: 'e (as in prey)', word: 'एड़ी (Edi) — Heel 🦶' },
+      { char: 'ऐ', type: 'vowel', phonetic: 'ai (as in bat)', word: 'ऐनक (Ainak) — Glasses 👓' },
+      { char: 'ओ', type: 'vowel', phonetic: 'o (as in go)', word: 'ओखली (Okhli) — Mortar 🥣' },
+      { char: 'औ', type: 'vowel', phonetic: 'au (as in saw)', word: 'औरत (Aurat) — Woman 👩' },
+      { char: 'अं', type: 'vowel', phonetic: 'am / ang', word: 'अंगूर (Angoor) — Grapes 🍇' },
+      { char: 'अः', type: 'vowel', phonetic: 'aha', word: 'प्रातः (Praatah) — Morning 🌅' },
+
+      // Consonants (व्यंजन) - 36
+      { char: 'क', type: 'consonant', phonetic: 'ka', word: 'कबूतर (Kabootar) — Pigeon 🕊️' },
+      { char: 'ख', type: 'consonant', phonetic: 'kha', word: 'खरगोश (Khargosh) — Rabbit 🐇' },
+      { char: 'ग', type: 'consonant', phonetic: 'ga', word: 'गमला (Gamla) — Flower Pot 🪴' },
+      { char: 'घ', type: 'consonant', phonetic: 'gha', word: 'घर (Ghar) — House 🏠' },
+      { char: 'ङ', type: 'consonant', phonetic: 'nga', word: 'रंग (Rang) — Color 🎨' },
+
+      { char: 'च', type: 'consonant', phonetic: 'cha', word: 'चम्मच (Chammach) — Spoon 🥄' },
+      { char: 'छ', type: 'consonant', phonetic: 'chha', word: 'छतरी (Chhatri) — Umbrella ☂️' },
+      { char: 'ज', type: 'consonant', phonetic: 'ja', word: 'जहाज़ (Jahaaz) — Ship 🚢' },
+      { char: 'झ', type: 'consonant', phonetic: 'jha', word: 'झंडा (Jhanda) — Flag 🚩' },
+      { char: 'ञ', type: 'consonant', phonetic: 'nya', word: 'ज्ञान / चंचल — Playful ✨' },
+
+      { char: 'ट', type: 'consonant', phonetic: 'ta (retroflex)', word: 'टमाटर (Tamaatar) — Tomato 🍅' },
+      { char: 'ठ', type: 'consonant', phonetic: 'tha (retroflex)', word: 'ठेला (Thela) — Cart 🛒' },
+      { char: 'ड', type: 'consonant', phonetic: 'da (retroflex)', word: 'डमरू (Damroo) — Drum 🥁' },
+      { char: 'ढ', type: 'consonant', phonetic: 'dha (retroflex)', word: 'ढोल (Dhol) — Big Drum 🎶' },
+      { char: 'ण', type: 'consonant', phonetic: 'na (retroflex)', word: 'बाण (Baan) — Arrow 🏹' },
+
+      { char: 'त', type: 'consonant', phonetic: 'ta (soft)', word: 'तरबूज (Tarbooj) — Watermelon 🍉' },
+      { char: 'थ', type: 'consonant', phonetic: 'tha (soft)', word: 'थर्मस (Tharmas) — Thermos 🧴' },
+      { char: 'द', type: 'consonant', phonetic: 'da (soft)', word: 'दवात (Davaat) — Inkpot 🖋️' },
+      { char: 'ध', type: 'consonant', phonetic: 'dha (soft)', word: 'धनुष (Dhanush) — Bow 🏹' },
+      { char: 'न', type: 'consonant', phonetic: 'na', word: 'नल (Nal) — Tap 🚰' },
+
+      { char: 'प', type: 'consonant', phonetic: 'pa', word: 'पतंग (Patang) — Kite 🪁' },
+      { char: 'फ', type: 'consonant', phonetic: 'pha', word: 'फल (Phal) — Fruits 🍓' },
+      { char: 'ब', type: 'consonant', phonetic: 'ba', word: 'बत्तख (Battakh) — Duck 🦆' },
+      { char: 'भ', type: 'consonant', phonetic: 'bha', word: 'भालू (Bhaaloo) — Bear 🐻' },
+      { char: 'म', type: 'consonant', phonetic: 'ma', word: 'मछली (Machhli) — Fish 🐟' },
+
+      { char: 'य', type: 'consonant', phonetic: 'ya', word: 'यज्ञ (Yagya) — Sacred Fire 🔥' },
+      { char: 'र', type: 'consonant', phonetic: 'ra', word: 'रथ (Rath) — Chariot 🛞' },
+      { char: 'ल', type: 'consonant', phonetic: 'la', word: 'लट्टू (Lattoo) — Spinning Top 🪀' },
+      { char: 'व', type: 'consonant', phonetic: 'va / wa', word: 'वन (Van) — Forest 🌲' },
+
+      { char: 'श', type: 'consonant', phonetic: 'sha', word: 'शलजम (Shaljam) — Turnip 🥬' },
+      { char: 'ष', type: 'consonant', phonetic: 'shha', word: 'षट्कोण (Shatkon) — Hexagon 🛑' },
+      { char: 'स', type: 'consonant', phonetic: 'sa', word: 'सेब (Seb) — Apple 🍏' },
+      { char: 'ह', type: 'consonant', phonetic: 'ha', word: 'हाथी (Haathi) — Elephant 🐘' },
+
+      { char: 'क्ष', type: 'consonant', phonetic: 'ksha', word: 'क्षत्रिय (Kshatriya) — Warrior 🛡️' },
+      { char: 'त्र', type: 'consonant', phonetic: 'tra', word: 'त्रिशूल (Trishul) — Trident 🔱' },
+      { char: 'ज्ञ', type: 'consonant', phonetic: 'gya', word: 'ज्ञानी (Gyaani) — Wise Scholar 📚' }
+    ];
+
+    const COLORS = ['#ff6b6b', '#f06595', '#845ef7', '#339af0', '#20c997', '#ff922b', '#e8590c'];
+
+    let mode = 'random'; // 'random' | 'sequence'
+    let category = 'all'; // 'all' | 'vowel' | 'consonant'
+    let filteredList = [...LETTERS];
+    let currentIndex = 0;
+    let history = [];
+    let stars = 0;
+    let quizMode = false;
+    let audioCtx = null;
+
+    function playPopSound() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(420, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(680, audioCtx.currentTime + 0.09);
+
+        gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.11);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.12);
+      } catch (e) {}
+    }
+
+    function speakCurrent(e) {
+      if (e) e.stopPropagation();
+      const item = filteredList[currentIndex];
+      if (!item || !('speechSynthesis' in window)) return;
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(item.char);
+      utterance.lang = 'hi-IN';
+      utterance.rate = 0.85;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function spawnSparkles() {
+      const emojis = ['⭐', '✨', '🌟', '🎉', '🎈'];
+      const rect = document.getElementById('flashcard').getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      for (let i = 0; i < 6; i++) {
+        const el = document.createElement('div');
+        el.className = 'particle';
+        el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        const angle = (Math.PI * 2 * i) / 6 + (Math.random() * 0.4);
+        const dist = 70 + Math.random() * 60;
+        el.style.left = cx + 'px';
+        el.style.top = cy + 'px';
+        el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+        el.style.setProperty('--dy', Math.sin(angle) * dist - 30 + 'px');
+        el.style.setProperty('--rot', (Math.random() * 180 - 90) + 'deg');
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 850);
+      }
+    }
+
+    function renderCard(animate = true) {
+      const item = filteredList[currentIndex];
+      const card = document.getElementById('flashcard');
+      const letterEl = document.getElementById('hindiLetter');
+      const typePill = document.getElementById('typePill');
+
+      letterEl.textContent = item.char;
+      letterEl.style.color = COLORS[currentIndex % COLORS.length];
+
+      if (item.type === 'vowel') {
+        typePill.textContent = 'स्वर • Vowel';
+        typePill.className = 'type-pill vowel';
+      } else {
+        typePill.textContent = 'व्यंजन • Consonant';
+        typePill.className = 'type-pill consonant';
+      }
+
+      document.getElementById('phoneticText').textContent = item.phonetic;
+      document.getElementById('exampleText').textContent = item.word;
+      document.getElementById('seqCounter').textContent = `${currentIndex + 1}/${filteredList.length}`;
+
+      if (animate) {
+        card.classList.remove('pop-in');
+        void card.offsetWidth;
+        card.classList.add('pop-in');
+      }
+    }
+
+    function handleCardTap() {
+      nextLetter(true);
+    }
+
+    function nextLetter(fromCardTap = false) {
+      playPopSound();
+      history.push(currentIndex);
+      if (history.length > 50) history.shift();
+
+      if (mode === 'random') {
+        if (filteredList.length > 1) {
+          let nextIdx;
+          do {
+            nextIdx = Math.floor(Math.random() * filteredList.length);
+          } while (nextIdx === currentIndex);
+          currentIndex = nextIdx;
+        }
+      } else {
+        currentIndex = (currentIndex + 1) % filteredList.length;
+      }
+
+      stars++;
+      const starEl = document.getElementById('starCount');
+      const badgeEl = document.getElementById('starsBadge');
+      starEl.textContent = stars;
+      badgeEl.classList.remove('bump');
+      void badgeEl.offsetWidth;
+      badgeEl.classList.add('bump');
+
+      if (stars % 5 === 0) {
+        spawnSparkles();
+      }
+
+      renderCard(true);
+    }
+
+    function prevLetter() {
+      playPopSound();
+      if (mode === 'random' && history.length > 0) {
+        currentIndex = history.pop();
+      } else {
+        currentIndex = (currentIndex - 1 + filteredList.length) % filteredList.length;
+      }
+      renderCard(true);
+    }
+
+    function setMode(newMode) {
+      mode = newMode;
+      document.getElementById('btnRandom').classList.toggle('active', mode === 'random');
+      document.getElementById('btnSequence').classList.toggle('active', mode === 'sequence');
+      history = [];
+      if (mode === 'sequence') {
+        currentIndex = 0;
+      }
+      renderCard(true);
+    }
+
+    function setCategory(newCat) {
+      category = newCat;
+      document.getElementById('filterAll').classList.toggle('active', category === 'all');
+      document.getElementById('filterVowel').classList.toggle('active', category === 'vowel');
+      document.getElementById('filterConsonant').classList.toggle('active', category === 'consonant');
+
+      filteredList = category === 'all'
+        ? [...LETTERS]
+        : LETTERS.filter(l => l.type === category);
+
+      history = [];
+      currentIndex = mode === 'random'
+        ? Math.floor(Math.random() * filteredList.length)
+        : 0;
+
+      renderCard(true);
+    }
+
+    function toggleQuiz() {
+      quizMode = !quizMode;
+      const hintBox = document.getElementById('hintBox');
+      const quizBtn = document.getElementById('quizBtn');
+      hintBox.classList.toggle('hidden', quizMode);
+      quizBtn.classList.toggle('active', quizMode);
+      quizBtn.textContent = quizMode ? '👁️ Show Hint' : '🙈 Hide Hint';
+    }
+
+    // Initialize
+    currentIndex = Math.floor(Math.random() * filteredList.length);
+    renderCard(false);
+  </script>
+</body>
+</html>
